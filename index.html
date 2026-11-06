@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi CBT Sekolah Nyaman</title>
+    <!-- Tailwind CSS untuk Desain Ramah Anak -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body { font-family: 'Comic Sans MS', 'Chalkboard SE', 'sans-serif'; }
+    </style>
+</head>
+<body class="bg-blue-50 min-h-screen flex flex-col justify-between">
+
+    <!-- HEADER -->
+    <header class="bg-blue-600 text-white p-4 text-center shadow-md">
+        <h1 class="text-xl font-bold font-sans">🌟 RUANG UJIAN CERIA 🌟</h1>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="container mx-auto p-4 flex-grow max-w-xl">
+        
+        <!-- 1. HALAMAN LOGIN -->
+        <div id="login-page" class="bg-white rounded-2xl p-6 shadow-xl border-4 border-blue-200 mt-10">
+            <h2 class="text-center text-2xl font-bold text-blue-700 mb-6">Halo! Yuk Masuk Kelas 🚀</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-1">Nama Lengkap:</label>
+                    <input type="text" id="siswa-nama" class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-blue-500 focus:outline-none text-lg" placeholder="Ketik namamu di sini...">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-1">Kelas:</label>
+                    <select id="siswa-kelas" class="w-full border-2 border-gray-300 p-3 rounded-xl focus:border-blue-500 focus:outline-none text-lg">
+                        <option value="Kelas 4">Kelas 4</option>
+                        <option value="Kelas 5">Kelas 5</option>
+                        <option value="Kelas 6">Kelas 6</option>
+                    </select>
+                </div>
+                <button onclick="mulaiUjian()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl text-xl shadow-lg transition-transform transform active:scale-95 cursor-pointer">
+                    Mulai Ujian Sekarang 🎉
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. HALAMAN SOAL -->
+        <div id="quiz-page" class="hidden bg-white rounded-2xl p-6 shadow-xl border-4 border-blue-200 relative">
+            <!-- Info Status -->
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <span id="display-nama" class="font-bold text-blue-600 text-md">Siswa</span>
+                <span id="pelanggaran-badge" class="bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-sm">Peringatan: 0/3</span>
+            </div>
+
+            <!-- Tampilan Soal -->
+            <div class="mb-6">
+                <h3 id="soal-teks" class="text-xl font-bold text-gray-800 mb-4">Memuat soal...</h3>
+                <div id="pilihan-container" class="space-y-3">
+                    <!-- Pilihan Ganda Dibuat Otomatis dari JS -->
+                </div>
+            </div>
+
+            <!-- Navigasi Tombol -->
+            <div class="flex justify-between items-center mt-8">
+                <button onclick="soalSelesai()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-3 rounded-xl text-lg shadow cursor-pointer">
+                    Selesai & Kumpulkan 📥
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. HALAMAN SELESAI -->
+        <div id="finish-page" class="hidden bg-white rounded-2xl p-8 shadow-xl border-4 border-green-200 text-center mt-10">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="text-2xl font-bold text-green-600 mb-2">Hebat! Kamu Sudah Selesai!</h2>
+            <p class="text-gray-600 mb-6">Jawabanmu sudah dikirim dengan aman ke komputer Bapak/Ibu Guru.</p>
+            <div class="p-4 bg-green-50 text-green-800 rounded-xl font-semibold mb-4">
+                Nilai Kamu: <span id="nilai-akhir" class="text-2xl font-black">0</span>
+            </div>
+            <p class="text-sm text-gray-400">Silakan beri tahu gurumu jika sudah di halaman ini.</p>
+        </div>
+
+    </main>
+
+    <!-- MODAL POPUP ANTI CONTEK -->
+    <div id="warning-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-6 text-center max-w-sm border-4 border-red-500 shadow-2xl">
+            <div class="text-red-500 text-5xl mb-3">⚠️</div>
+            <h3 class="text-xl font-bold text-red-600 mb-2">Jangan Pindah Tab!</h3>
+            <p class="text-gray-600 mb-6 font-medium">Ujian ini melarangmu membuka internet atau aplikasi lain demi kejujuran.</p>
+            <button onclick="tutupPeringatan()" class="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl w-full text-lg cursor-pointer">
+                Saya Mengerti, Kembali Ujian
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // GANTI LINK DI BAWAH INI DENGAN URL GOOGLE APPS SCRIPT ANDA SEBELUM DI-DEPLOY
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3q_mqo8UBQZZr1cgvQTShBA9DCHNPk5Y-cCrnlCOC82VLgiOgh2Ym1hdHM0YCflwW/exec";
+
+        // Bank Soal Sederhana (Bisa Anda tambah/sesuaikan)
+        const bankSoal = [
+            { soal: "Berapakah hasil dari 5 + 7?", opsi: ["10", "11", "12", "13"], kunci: "12" },
+            { soal: "Ibu kota dari negara Indonesia adalah...", opsi: ["Surabaya", "Jakarta", "Bandung", "Medan"], kunci: "Jakarta" },
+            { soal: "Hewan apa yang dikenal sebagai Raja Hutan?", opsi: ["Gajah", "Harimau", "Singa", "Kucing"], kunci: "Singa" }
+        ];
+
+        let indexSoal = 0;
+        let jawabanSiswa = [];
+        let jumlahPelanggaran = 0;
+        let namaSiswa = "";
+        let kelasSiswa = "";
+
+        // Fungsi Masuk ke Mode Fullscreen
+        function requestFullscreen() {
+            let elem = document.documentElement;
+            if (elem.requestFullscreen) elem.requestFullscreen();
+            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+            else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+        }
+
+        // Mulai Ujian
+        function mulaiUjian() {
+            namaSiswa = document.getElementById('siswa-nama').value.trim();
+            kelasSiswa = document.getElementById('siswa-kelas').value;
+
+            if(!namaSiswa) {
+                alert("Tolong isi namamu dulu ya!");
+                return;
+            }
+
+            document.getElementById('display-nama').innerText = `${namaSiswa} (${kelasSiswa})`;
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('quiz-page').classList.remove('hidden');
+            
+            requestFullscreen();
+            tampilkanSoal();
+            aktifkanSistemKeamanan();
+        }
+
+        // Menampilkan Soal ke Layar
+        function tampilkanSoal() {
+            let data = bankSoal[indexSoal];
+            document.getElementById('soal-teks').innerText = `${indexSoal + 1}. ${data.soal}`;
+            
+            let container = document.getElementById('pilihan-container');
+            container.innerHTML = "";
+
+            data.opsi.forEach(opsi => {
+                let isChecked = jawabanSiswa[indexSoal] === opsi;
+                let btn = document.createElement('button');
+                btn.className = `w-full text-left p-4 rounded-xl border-2 font-medium text-lg transition ${isChecked ? 'bg-blue-100 border-blue-500 font-bold text-blue-900' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'} cursor-pointer`;
+                btn.innerText = opsi;
+                btn.onclick = () => {
+                    jawabanSiswa[indexSoal] = opsi;
+                    tampilkanSoal(); // Refresh tampilan agar terpilih
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // SISTEM ANTI-CONTEK (INTELLIGENT FOCUS MONITORING)
+        function aktifkanSistemKeamanan() {
+            // Deteksi jika browser mendeteksi halaman tidak aktif (pindah tab/minimize)
+            document.addEventListener('visibilitychange', handleKecurangan);
+            window.addEventListener('blur', handleKecurangan);
+        }
+
+        function handleKecurangan() {
+            // Hanya aktif saat sedang di halaman kuis
+            if(!document.getElementById('quiz-page').classList.contains('hidden')) {
+                jumlahPelanggaran++;
+                document.getElementById('pelanggaran-badge').innerText = `Peringatan: ${jumlahPelanggaran}/3`;
+                
+                // Tampilkan Modal Peringatan
+                document.getElementById('warning-modal').classList.remove('hidden');
+
+                // Jika melanggar lebih dari 3 kali, otomatis paksa selesai ujian
+                if(jumlahPelanggaran >= 3) {
+                    alert("Ujian dihentikan dan disimpan otomatis karena kamu terlalu banyak keluar tab aplikasi.");
+                    document.getElementById('warning-modal').classList.add('hidden');
+                    soalSelesai();
+                }
+            }
+        }
+
+        function tutupPeringatan() {
+            document.getElementById('warning-modal').classList.add('hidden');
+            requestFullscreen(); // Kembalikan ke layar penuh otomatis
+        }
+
+        // Hitung Skor & Kirim Data
+        function soalSelesai() {
+            // Matikan deteksi kecurangan agar tidak bentrok di halaman selesai
+            document.removeEventListener('visibilitychange', handleKecurangan);
+            window.removeEventListener('blur', handleKecurangan);
+
+            // Hitung nilai dasar
+            let benar = 0;
+            bankSoal.forEach((soal, i) => {
+                if(jawabanSiswa[i] === soal.kunci) benar++;
+            });
+            let totalNilai = Math.round((benar / bankSoal.length) * 100);
+
+            // Tampilkan halaman nilai akhir
+            document.getElementById('nilai-akhir').innerText = totalNilai;
